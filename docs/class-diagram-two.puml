@@ -1,0 +1,134 @@
+@startuml
+title AirWatch Indoor Air Monitor Unit - Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+
+' =========================
+' MODEST IOT FRAMEWORK
+' =========================
+
+abstract class Device {
+    # pollingIntervalMs : unsigned long
+    + handle() : void
+}
+
+abstract class Sensor {
+    # pin : int
+    + readData() : float
+}
+
+abstract class Actuator {
+    # pin : int
+    + execute() : void
+}
+
+abstract class TelemetryPackage {
+    + serialize() : String
+}
+
+
+' =========================
+' MAIN DEVICE
+' =========================
+
+class AirWatchIndoorAirMonitorUnit {
+    - zoneId : String
+    - samplingIntervalMs : unsigned long
+    + begin() : void
+    + collectReading() : AirQualityReading
+    + updateDisplay() : void
+    + sendReading() : void
+    + updateAlertLed(state : bool) : void
+}
+
+Device <|-- AirWatchIndoorAirMonitorUnit
+
+
+' =========================
+' SENSORS
+' =========================
+
+class DS18B20TemperatureSensor {
+    - temperatureC : float
+    + readData() : float
+}
+
+class SCD30CO2Sensor {
+    - co2Ppm : float
+    + readData() : float
+}
+
+class HPMA115S0PM25Sensor {
+    - pm25Level : float
+    + readData() : float
+}
+
+Sensor <|-- DS18B20TemperatureSensor
+Sensor <|-- SCD30CO2Sensor
+Sensor <|-- HPMA115S0PM25Sensor
+
+
+' =========================
+' ACTUATORS
+' =========================
+
+class LcdDisplay {
+    + showValues(reading : AirQualityReading) : void
+    + clear() : void
+}
+
+class Led {
+    - active : bool
+    + turnOn() : void
+    + turnOff() : void
+}
+
+Actuator <|-- LcdDisplay
+Actuator <|-- Led
+
+
+' =========================
+' TELEMETRY
+' =========================
+
+class AirQualityReading {
+    - temperatureC : float
+    - co2Ppm : float
+    - pm25Level : float
+    + serialize() : String
+}
+
+TelemetryPackage <|-- AirQualityReading
+
+
+' =========================
+' EDGE COMMUNICATION
+' =========================
+
+class AirWatchEdgeClient {
+    - endpoint : String
+    + sendReading(reading : AirQualityReading) : bool
+}
+
+
+' =========================
+' RELATIONSHIPS
+' =========================
+
+AirWatchIndoorAirMonitorUnit *-- DS18B20TemperatureSensor
+AirWatchIndoorAirMonitorUnit *-- SCD30CO2Sensor
+AirWatchIndoorAirMonitorUnit *-- HPMA115S0PM25Sensor
+
+AirWatchIndoorAirMonitorUnit *-- LcdDisplay
+
+AirWatchIndoorAirMonitorUnit *-- "2" Led : statusLed / alertLed
+
+AirWatchIndoorAirMonitorUnit *-- AirWatchEdgeClient
+
+AirWatchIndoorAirMonitorUnit ..> AirQualityReading : creates
+
+AirWatchEdgeClient ..> AirQualityReading : sends
+
+@enduml
