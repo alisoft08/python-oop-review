@@ -1,0 +1,128 @@
+@startuml
+title AirWatch Indoor Air Monitor Unit - Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+' =========================
+' ModestIoT Framework
+' =========================
+
+abstract class Device {
+    # pollingIntervalMs : unsigned long
+    + handle() : void
+}
+
+abstract class Sensor {
+    # pin : int
+    + readData() : float
+}
+
+abstract class Actuator {
+    # pin : int
+    + execute() : void
+}
+
+
+' =========================
+' Main Device
+' =========================
+
+class AirWatchIndoorAirMonitorUnit {
+    - zoneId : String
+    - samplingIntervalMs : unsigned long
+    + begin() : void
+    + collectReading() : AirQualityReading
+    + updateDisplay() : void
+    + sendReading() : void
+    + updateAlertStatus() : void
+}
+
+Device <|-- AirWatchIndoorAirMonitorUnit
+
+
+' =========================
+' Sensors
+' =========================
+
+class TemperatureSensor {
+    - temperature : float
+    + readData() : float
+}
+
+class CO2Sensor {
+    - co2Level : float
+    + readData() : float
+}
+
+class PM25Sensor {
+    - pm25Level : float
+    + readData() : float
+}
+
+Sensor <|-- TemperatureSensor
+Sensor <|-- CO2Sensor
+Sensor <|-- PM25Sensor
+
+
+' =========================
+' Actuators
+' =========================
+
+class LcdDisplay {
+    + showReading(reading : AirQualityReading) : void
+    + clear() : void
+}
+
+class Led {
+    - active : bool
+    + turnOn() : void
+    + turnOff() : void
+}
+
+Actuator <|-- LcdDisplay
+Actuator <|-- Led
+
+
+' =========================
+' Air Quality Data
+' =========================
+
+class AirQualityReading {
+    - temperature : float
+    - co2 : float
+    - pm25 : float
+    + toJson() : String
+}
+
+
+' =========================
+' Communication
+' =========================
+
+class EdgeGatewayClient {
+    - endpoint : String
+    + connect() : bool
+    + sendReading(reading : AirQualityReading) : bool
+}
+
+
+' =========================
+' Relationships
+' =========================
+
+AirWatchIndoorAirMonitorUnit *-- TemperatureSensor : temperatureSensor
+AirWatchIndoorAirMonitorUnit *-- CO2Sensor : co2Sensor
+AirWatchIndoorAirMonitorUnit *-- PM25Sensor : pm25Sensor
+
+AirWatchIndoorAirMonitorUnit *-- LcdDisplay : display
+
+AirWatchIndoorAirMonitorUnit *-- "2" Led : status / alert
+
+AirWatchIndoorAirMonitorUnit *-- EdgeGatewayClient : gatewayClient
+
+AirWatchIndoorAirMonitorUnit ..> AirQualityReading : creates
+
+EdgeGatewayClient ..> AirQualityReading : sends
+
+@enduml
